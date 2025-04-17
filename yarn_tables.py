@@ -96,33 +96,45 @@ class YarnTables:
             
             if len(info_diff) == 0:
                 print('There is no information to update.')
-                return None
+                return None,tmp_i
             
-            # TO DO: make the update optional -- also maybe make on case by case basis for each set of info
-            # print('Would you like to update the entry with the following information?')
+            # TO DO: make update optional on case-by-case basis for each set of info (might want to only update some), also allow for full overwrite of notes/dye lots
             print('You are updating the following information:')
-            for i in info_diff:
-                print('{0}: {1}'.format(i, info_diff[i]))
+            for id in info_diff:
+                if id == 'Notes' and table.iloc[tmp_i]['Notes'] != new_data['Notes']:
+                    info_diff['Notes'] = self.format_long_form(table.loc[tmp_i]['Notes'], new_data['Notes'])
+                elif id == 'Dye Lots' and table.loc[tmp_i]['Dye Lots'] != new_data['Dye Lots']:
+                    info_diff['Dye Lots'] = self.format_long_form(table.loc[tmp_i]['Dye Lots'], new_data['Dye Lots'])
+                
+                print(id, ': ', info_diff[id])
             
-            print('** Note: dye lots and notes will be combined between new and updated versions. **')
-            
-            # TO DO: offer option to completely overwrite notes, for example if dye lots used up we might actually want to delete some
-            if 'Notes' in table.columns and table.iloc[tmp_i]['Notes'] != new_data['Notes']:
-                new_data['Notes'] = self.format_long_form(table.loc[tmp_i]['Notes'], new_data['Notes'])
-            elif 'Dye Lots' in table.columns and table.loc[tmp_i]['Dye Lots'] != new_data['Dye Lots']:
-                new_data['Dye Lots'] = self.format_long_form(table.loc[tmp_i]['Dye Lots'], new_data['Dye Lots'])
+            return info_diff,tmp_i
 
-            self.remove_table_entry(table, remove_i=tmp_i)
-
-        return new_data
+        return new_data,-1
 
     def add_to_yarn(self, new_data):
         # format, check for duplicates
-        new_data = self.add_helper(self.yarns_table, new_data)
+        new_data,i = self.add_helper(self.yarns_table, new_data)
         if new_data == None:
             return
         
-        self.yarns_table.loc[len(self.yarns_table)] = new_data
+        # calculate meters from yards or vice versa if only one is provided
+        yds_per_m = 1.09361
+        ms_per_yd = 0.9144
+
+        if 'Length/Skein (yds)' in new_data and new_data['Length/Skein (yds)'] == None:
+            new_data['Length/Skein (yds)'] = new_data['Length/Skein (ms)'] * yds_per_m
+        elif 'Length/Skein (ms)' in new_data and new_data['Length/Skein (ms)'] == None:
+            new_data['Length/Skein (ms)'] = new_data['Length/Skein (yds)'] * ms_per_yd
+        
+        #print('For testing:', new_data)
+        
+        # update or new data entry
+        if i > -1:
+            for nd in new_data:
+                self.yarns_table.loc[i, nd] = new_data[nd]
+        else:
+            self.yarns_table.loc[len(self.yarns_table)] = new_data
     
     def add_to_stash(self, new_data):
         # make sure yarn exists in Yarn database
@@ -134,14 +146,24 @@ class YarnTables:
             return
         
         # format, check for duplicates
-        new_data = self.add_helper(self.stash_table, new_data)
+        new_data,i = self.add_helper(self.stash_table, new_data)
 
-        # if nothing ot update or updating with 0 for all amount info (really a removal from stash)
-        if new_data == None or (new_data['# Skeins'] == 0 and new_data['Total Length (yds)'] == 0 and new_data['Total Length (ms)'] == 0 and new_data['Total Weight (g)'] == 0):
+        # if nothing to update or updating with 0 for all amount info (really a removal from stash)
+        if new_data == None:
             return
         
+        # removal of something already in stash
+        if new_data['# Skeins'] == 0 and new_data['Total Length (yds)'] == 0 and new_data['Total Length (ms)'] == 0 and new_data['Total Weight (g)'] == 0:
+            self.remove_table_entry(self.stash_table, remove_i = i)
+            return
+        
+        # if updating ensure all methods of measurements included
+        measurements = ['# Skeins', 'Total Length (yds)', 'Total Length (ms)', 'Total Weight (g)']
+        for m in measurements:
+            if m not in new_data:
+                new_data[m] = None
+        
         # if only given subset of # skeins, total length, total weight, use given info to calculate remaining using yarn info
-
         yds_per_skein = self.yarns_table.loc[yarn_i]['Length/Skein (yds)']
         ms_per_skein = self.yarns_table.loc[yarn_i]['Length/Skein (ms)']
         gs_per_skein = self.yarns_table.loc[yarn_i]['Weight/Skein (g)']
@@ -162,8 +184,13 @@ class YarnTables:
             new_data['Total Length (ms)'] = new_data['# Skeins'] * ms_per_skein
         if new_data['Total Weight (g)'] == None:
             new_data['Total Weight (g)'] = new_data['# Skeins'] * gs_per_skein
-       
-        self.stash_table.loc[len(self.stash_table)] = new_data
+
+        # update existing or add new entry
+        if i > -1:
+            for nd in new_data:
+                self.stash_table.loc[i, nd] = new_data[nd]
+        else:
+            self.stash_table.loc[len(self.stash_table)] = new_data
 
     def remove_table_entry(self, table, remove_i=None, remove_brand=None, remove_color=None):
         if remove_brand != None:

@@ -11,7 +11,7 @@ def test_yarn_table(yts, print_info=True):
     
     # expected: add yarn to table
     print('*** Adding Lion Brand black ***')
-    new_yarn = {'Brand Name': 'Lion Brand', 'Color': 'black', 'Material': 'polyester', 'Yarn Weight': 3, 'Length/Skein (yds)': 300, 'Length/Skein (ms)': 250, 'Weight/Skein (g)': 100, 'Machine Washable': False, 'Notes': 'very dark'}
+    new_yarn = {'Brand Name': 'Lion Brand', 'Color': 'black', 'Material': 'polyester', 'Yarn Weight': 3, 'Length/Skein (yds)': 300, 'Length/Skein (ms)': None, 'Weight/Skein (g)': 100, 'Machine Washable': False, 'Notes': 'very dark'}
     yts.add_to_yarn(new_yarn)
 
     if print_info:
@@ -20,7 +20,7 @@ def test_yarn_table(yts, print_info=True):
 
     # expected: update the information
     print('*** Updating info for Lion Brand black ***')
-    new_yarn = {'Brand Name': 'Lion brand', 'Color': 'black', 'Material': 'polyester', 'Yarn Weight': 3, 'Length/Skein (yds)': 400, 'Length/Skein (ms)': 350, 'Weight/Skein (g)': 100, 'Machine Washable': False, 'Notes': 'nice to work with'}
+    new_yarn = {'Brand Name': 'Lion brand', 'Color': 'black', 'Material': 'polyester', 'Yarn Weight': 3, 'Length/Skein (yds)': 400, 'Length/Skein (ms)': None, 'Weight/Skein (g)': 150, 'Machine Washable': False, 'Notes': 'nice to work with'}
     yts.add_to_yarn(new_yarn)
 
     if print_info:
@@ -58,7 +58,7 @@ def test_stash_table(yts):
 
     # expected: update stash to increase # of skeins by adding duplicate (total length and number of skeins should increase)
     print('*** Increase amount of lion brand black in stash -- # skeins and length should increase as result')
-    new_stash = {'Brand Name': 'lion brand', 'Color': 'black', '# Skeins': None, 'Total Length (yds)': None, 'Total Length (ms)': None, 'Total Weight (g)': 300, 'Dye Lots': 'xyz, abc'}
+    new_stash = {'Brand Name': 'lion brand', 'Color': 'black', '# Skeins': None, 'Total Length (yds)': None, 'Total Length (ms)': None, 'Total Weight (g)': 500, 'Dye Lots': 'xyz, abc'}
     yts.add_to_stash(new_stash)
 
     yts.print_table(yts.stash_table)
@@ -74,7 +74,7 @@ def test_stash_table(yts):
 
     # expected: update stash to decrease the # skeins by adding duplicate
     print('*** Decrease amount stashed of lion brand black ***')
-    new_stash = {'Brand Name': 'lion brand', 'Color': 'black', '# Skeins': None, 'Total Length (yds)': 350, 'Total Length (ms)': None, 'Total Weight (g)': None, 'Dye Lots': ''}
+    new_stash = {'Brand Name': 'lion brand', 'Color': 'black', '# Skeins': None, 'Total Length (yds)': 150, 'Total Length (ms)': None, 'Total Weight (g)': None, 'Dye Lots': ''}
     yts.add_to_stash(new_stash)
 
     yts.print_table(yts.stash_table)

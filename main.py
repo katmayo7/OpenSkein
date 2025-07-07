@@ -1,11 +1,14 @@
 import yarn_tables
+import pandas as pd
 
-# allows for viewing both meters and imperial measurements despite the general table settings (useful depending on pattern listing, etc.)
-def view(tables, table_name, use_metric=False):
+# allows for viewing both metric and imperial measurements despite the general table settings (useful depending on pattern listing, etc.)
+def view(tables, table_name, use_metric=False, filter_table={}):
     if table_name == 'yarn':
         all_cols = tables.yarns_table.columns.tolist()
     elif table_name == 'stash':
         all_cols = tables.stash_table.columns.tolist()
+    elif len(filter_table) > 0:
+        all_cols = filter_table.columns.tolist()
     
     # color and brand name are always displayed
     all_cols.remove('BRAND NAME')
@@ -33,10 +36,16 @@ def view(tables, table_name, use_metric=False):
 
             validated_to_view.append(tv)
     
+    # add back in brand name and color, which are always displayed
+    validated_to_view.insert(0, 'BRAND NAME')
+    validated_to_view.insert(1, 'COLOR')
+    
     if table_name == 'yarn':
         print(tables.yarns_table[validated_to_view])
     elif table_name == 'stash':
-        print(tables.stash_table[[validated_to_view]])
+        print(tables.stash_table[validated_to_view])
+    elif len(filter_table) > 0:
+        return filter_table[validated_to_view]
     
 def add_yarn(tables, brand=None, color=None, use_metric=False):
     correct = 'no'
@@ -159,19 +168,161 @@ def remove_from_stash(tables):
     else:
         print('** Error: This yarn is not present in the stash **')
 
-def check_validity(input_string, table=False):
+# helper function to turn input into appropriate numerical value
+def valid_number(col, com='', float_val=True):
+    value = None
+
+    while True:
+        try:
+            if float_val:
+                if com != '':
+                    value = float(input('Enter the value {0} should be {1} than or equal to: '.format(col, com)))
+                else:
+                    value = float(input('Enter value: '))
+            else:
+                # yarn weight case
+                value = int(input('Enter the {0} value: '.format(col)))
+
+        except ValueError:
+            print('Must input an integer or decimal value.')
+    
+        return value
+    
+# see only the entries that match a certain criteria in one or more tables, allows for viewing metric and imperial if desired
+def filter(ytables, table_name, metric=False):
+    # get additional tables if necessary
+    print('Filtering {0} table.'.format(table_name))
+    tables = set()
+    tables.add(table_name)
+
+    valid_tables = ['yarn', 'stash', 'none']
+    ad_table = None
+
+    while ad_table != 'none' and ad_table != '':
+        ad_table = input('Enter the name of additional tables for filtering (choices: yarn, stash, none): ').lower()
+        if ad_table not in valid_tables:
+            print("I'm sorry, that table is not an option. Please select again, or enter none to finish.")
+            ad_table = None
+        else:
+            if ad_table != 'none':
+                tables.add(ad_table)
+    
+    # create new table to filter on, possibly the result of joining multiple tables together on brand+color
+    fil_table = None
+
+    if 'yarn' in tables:
+        fil_table = ytables.yarns_table
+    else:
+        fil_table = pd.DataFrame()
+
+    if 'stash' in tables and fil_table.shape[0] == 0:
+        fil_table = ytables.stash_table
+    elif 'stash' in tables:
+        fil_table = pd.merge(fil_table, ytables.stash_table, how='outer', on=['BRAND NAME', 'COLOR'])
+
+    check_equals = ['BRAND NAME', 'COLOR', 'MATERIAL', 'YARN WEIGHT', 'MACHINE WASHABLE']
+    check_geq_leq = ['# SKEINS', 'TOTAL LENGTH (YDS)', 'TOTAL LENGTH (MS)', 'TOTAL WEIGHT (G)']
+    # possible filtering columns in this table/joined table
+    in_table = []
+
+    for c in fil_table.columns.to_list():
+        if c in check_equals or c in check_geq_leq:
+            in_table.append(c)
+
+    # iterativley filter table by asking what column and values to performing filtering on
+    col_name = None
+    print('The following columns are available for filtering: {0}'.format(in_table))
+    prev_filtered = []
+
+    while col_name != 'NONE' and col_name != '':
+        # get column name for filtering
+        col_name = input("Enter a column you'd like to filter on or none to terminate: ").upper()
+
+        if col_name not in in_table and col_name != 'NONE' or col_name in prev_filtered:
+            print("I'm sorry, that is not a valid column name.")
+            print('The following columns are availalbe for filtering: {0}'.format(in_table))
+            col_name = None
+        elif col_name == 'NONE':
+            break
+        else:
+            prev_filtered.append(col_name)
+
+            # get value to filter on
+            filter_val = None
+            comp = ''
+            
+            if col_name in check_equals:
+                correct = 'no'
+                while correct != 'yes':
+                    # requires boolean
+                    if col_name == 'MACHINE WASHABLE':
+                        filter_val = input('Enter the value of {0} you are looking for (true/false or yes/no valid): ')
+                    # requires numerical input
+                    elif col_name == 'YARN WEIGHT':
+                        filter_val = valid_number(col_name, float_val=False)
+                    else:
+                        filter_val = input('Enter the value of {0} you are looking for: '.format(col_name))
+                    
+                    correct = input('Is {0} correct? (yes/no) '.format(filter_val)).lower()
+            else:
+                correct = 'no'
+                while correct != 'yes':
+                    # determine if we want to filter so value is >= or <=
+                    while comp != '>' and comp != '<':
+                        comp = input('Enter > for {0} value is greater than or equal to, and < for less than or equal to: '.format(col_name))
+                    
+                    # get value for filtering column
+                    if comp == '>':
+                        filter_val = valid_number(col_name, 'greater')
+                        correct = input('Is {0} greater than or equal to {1} correct? (yes/no) '.format(col_name, filter_val)).lower()
+                    else:
+                        filter_val = valid_number(col_name, 'less')
+                        correct = input('Is {0} less than or equal to {1} correct? (yes/no) '.format(col_name, filter_val)).lower()
+        
+            # filter
+            if col_name in check_equals and col_name == 'MACHINE WASHABLE':
+                fil_table = fil_table[fil_table[col_name] == (filter_val.lower() == 'yes' or filter_val.lower() == 'true')]
+            elif col_name in check_equals:
+                fil_table = fil_table[fil_table[col_name] == filter_val]
+            elif col_name in check_geq_leq and comp == '>':
+                fil_table = fil_table[fil_table[col_name] >= filter_val]
+            else:
+                fil_table = fil_table[fil_table[col_name] <= filter_val]
+            
+            print()
+            print(fil_table)
+            print()
+    
+
+    # allow viewing only a subset of available columns from the final table
+    subset_view = input('Do you wish to select for viewing a subset of the columns in the final filtered table? (yes/no) ')
+    if subset_view.lower() == 'yes':
+        fil_table = view(None, None, filter_table=fil_table)
+    
+    print()
+    print('FILTERED TABLE:')
+    print('************************************************************************************************************')
+    print(fil_table)
+    print('************************************************************************************************************')
+
+
+def check_validity(input_string, table=False, filtering=False):
     valid_tables = ['yarn', 'stash', 'back']
     valid_inputs = ['exit', 'view', 'add', 'filter', 'remove']
 
     if table:
         while input_string not in valid_tables:
-            input_string = input('Which table (yarn, stash, back to return): ').lower()
+            if filtering:
+                input_string = input('Which table first (yarn, stash, back to return): ').lower()
+            else:
+                input_string = input('Which table (yarn, stash, back to return): ').lower()
     else:
         while input_string not in valid_inputs:
             print('What would you like to do?')
             print('----add: add an entry to a table')
             print('----view: view a table')
             print('----remove: remove an entry from the stash')
+            print('----filter: filter tables by column entries')
             print('----exit: exit the program')
             print()
             input_string = input('Type desired action: ').lower()
@@ -197,7 +348,13 @@ if __name__ == '__main__':
         ci_input = check_validity(ci_input, table=False)
         if ci_input == 'exit':
             break
-        table = check_validity(None, table=True)
+        
+        # call modified table input prompt if going to be filtering tables
+        if ci_input == 'filter':
+            table = check_validity(None, table=True, filtering=True)
+        else:
+            table = check_validity(None, table=True)
+        
         print()
         
         if ci_input == 'view' and table != 'back':
@@ -223,13 +380,15 @@ if __name__ == '__main__':
             elif table == 'yarn':
                 print('** Can only remove from stash. **')
         elif ci_input == 'filter' and table != 'back':
-            pass
+            filter(yt, table, set_metric)
 
         ci_input = None
         table = None
         
         print()
         
-
-
-    #yt.save_data()
+    print('****************************************************************************************')
+    print('Saving data.')
+    yt.save_data()
+    print('Exiting program.')
+    print('*****************************************************************************************')

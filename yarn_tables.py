@@ -32,7 +32,9 @@ class YarnTables:
             self.stash_table['LAST UPDATED'] = pd.to_datetime(self.stash_table['LAST UPDATED'])
         
     def save_data(self):
-        if not os.path.exists(self.yarns_file):
+        #if not os.path.exists(self.yarns_file):
+            #os.mkdir('data/')
+        if not os.path.exists('data/'):
             os.mkdir('data/')
         
         self.yarns_table.to_pickle(self.yarns_file)

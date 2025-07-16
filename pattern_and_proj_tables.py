@@ -11,20 +11,22 @@ class PatternProjTables:
         self.project_table = None
         self.pattern_table = None
 
+        self.metric = metric
+
     def load_data(self):
         if os.path.exists(self.patterns_file):
             self.pattern_table = pd.read_pickle(self.patterns_file)
             self.project_table = pd.read_pickle(self.projects_file)
         else:
-            self.pattern_table = pd.DataFrame(columns=['DATE ADDED', 'PATTERN NAME', 'SUGGESTED YARN WEIGHT', 'SUGGESTED HOOK SIZE', 'TOTAL AMOUNT OF YARN (YDS)', 'TOTAL AMOUNT OF YARN (MS)', 'CATEGORY', 'NOTES', 'SOURCE'])
-            pattern_data_types = {'PATTERN NAME': str, 'SUGGESTED YARN WEIGHT': int, 'SUGGEST HOOK SIZE': float, 'TOTAL AMOUNT OF YARN (YDS)': float, 'TOTAL AMOUNT OF YARN (MS)': float, 'CATEGORY': str, 'NOTES': str, 'SOURCE': str}
+            self.pattern_table = pd.DataFrame(columns=['DATE ADDED', 'PATTERN NAME', 'SUGGESTED YARN WEIGHT', 'SUGGESTED HOOK SIZE', 'TOTAL AMOUNT OF YARN (YDS)', 'TOTAL AMOUNT OF YARN (MS)', 'CATEGORY', 'NOTES', 'SOURCE'])            
+            pattern_data_types = {'PATTERN NAME': 'str', 'SUGGESTED YARN WEIGHT': 'int', 'SUGGESTED HOOK SIZE': 'float', 'TOTAL AMOUNT OF YARN (YDS)': 'float', 'TOTAL AMOUNT OF YARN (MS)': 'float', 'CATEGORY': 'str', 'NOTES': 'str', 'SOURCE': 'str'}
             self.pattern_table = self.pattern_table.astype(pattern_data_types)
             self.pattern_table['DATE ADDED'] = pd.to_datetime(self.pattern_table['DATE ADDED'])
 
-            self.project_table = pd.DataFrame(columns=['DATE LOGGED', 'PROJECT NAME', 'PATTERN NAME', 'YARN(S) USED (BRAND+COLOR)', 'YARN WEIGHT', 'AMOUNT OF YARN (PER YARN)', 'TOTAL AMOUNT OF YARN (YDS)', 'TOTAL AMOUNT OF YARN (MS)', 'DYE LOTS (PER YARN)'
+            self.project_table = pd.DataFrame(columns=['DATE LOGGED', 'PROJECT NAME', 'PATTERN NAME', 'YARN(S) USED (BRAND+COLOR)', 'YARN WEIGHT', 'AMOUNT OF YARN (PER YARN)', 'TOTAL AMOUNT OF YARN (YDS)', 'TOTAL AMOUNT OF YARN (MS)', 'DYE LOTS (PER YARN)',
                                                        'HOOK SIZE USED', 'NOTES'])
-            project_data_types = {'PROJECT NAME': str, 'PATTERN NAME': str, 'YARN(S) USED (BRAND+COLOR)': str, 'YARN WEIGHT': int, 'AMOUNT OF YARN (PER YARN)': str, 'TOTAL AMOUNT OF YARN (YDS)': float, 'TOTAL AMOUNT OF YARN (MS)': float,
-                                  'DYE LOTS (PER YARN)': str, 'HOOK SIZE USED': float, 'NOTES': str}
+            project_data_types = {'PROJECT NAME': 'str', 'PATTERN NAME': 'str', 'YARN(S) USED (BRAND+COLOR)': 'str', 'YARN WEIGHT': 'int', 'AMOUNT OF YARN (PER YARN)': 'str', 'TOTAL AMOUNT OF YARN (YDS)': 'float', 'TOTAL AMOUNT OF YARN (MS)': 'float',
+                                  'DYE LOTS (PER YARN)': 'str', 'HOOK SIZE USED': 'float', 'NOTES': 'str'}
             self.project_table = self.project_table.astype(project_data_types)
             self.project_table['DATE LOGGED'] = pd.to_datetime(self.project_table['DATE LOGGED'])
 
@@ -83,10 +85,13 @@ class PatternProjTables:
 
     # handles updates if entry already exists
     def add_helper(self, table, new_entry, testing=False, pattern_search=True):
-        tmp = self.check_exists(table, new_entry['PATTERN NAME'], pattern_search)
+        if pattern_search:
+            tmp = self.check_exists(table, new_entry['PATTERN NAME'], pattern_search)
+        else:
+            tmp = self.check_exists(table, new_entry['PROJECT NAME'], pattern_search)
 
         if tmp == -1:
-            return None,-1
+            return new_entry,-1
         
         print('It looks like you are trying to add a duplicate. This pattern is already logged as:')
         print(table.loc[tmp])
@@ -99,7 +104,7 @@ class PatternProjTables:
         info_diff = {}
         print('The following information will be updated: ')
 
-        for col in table.columns:
+        for col in table.columns.tolist():
             # check if this information changes with the update
             if col in text_fields and new_entry[col] != None:
                 new_entry[col] = new_entry[col].lower()
@@ -120,14 +125,12 @@ class PatternProjTables:
                 if col == 'NOTES' and (result == 'extend' or testing == True):
                     info_diff[col] = self.format_long_form(table.loc[tmp]['NOTES'], new_entry['NOTES'])
             
-            if len(info_diff) == 0:
-                print('No information needs updating.')
-                return None,tmp
+        if len(info_diff) == 0:
+            print('No information needs updating.')
+            return None,tmp
 
-            return info_diff,tmp
+        return info_diff,tmp
         
-        return new_entry,-1
-
     def add_to_pattern(self, new_entry, run_test=False):
         # see if already exists, if so prep update steps
         new_data,ind = self.add_helper(self.pattern_table, new_entry, testing=run_test)
@@ -139,21 +142,23 @@ class PatternProjTables:
         yds_per_m = 1.09361
         ms_per_yd = 0.9144
 
-        if 'AMOUNT OF YARN (YDS)' in new_data and new_data['AMOUNT OF YARN (YDS)'] == None:
-            new_data['AMOUNT OF YARN (YDS)'] = new_data['AMOUNT OF YARN (MS)'] * yds_per_m
-        elif 'AMOUNT OF YARN (MS)' in new_data and new_data['AMOUNT OF YARN (MS)'] == None:
-            new_data['AMOUNT OF YARN (MS)'] = new_data['AMOUNT OF YARN (YDS)'] * ms_per_yd
+        if 'TOTAL AMOUNT OF YARN (YDS)' in new_data and new_data['TOTAL AMOUNT OF YARN (YDS)'] == None:
+            new_data['TOTAL AMOUNT OF YARN (YDS)'] = new_data['TOTAL AMOUNT OF YARN (MS)'] * yds_per_m
+        elif 'TOTAL AMOUNT OF YARN (MS)' in new_data and new_data['TOTAL AMOUNT OF YARN (MS)'] == None:
+            new_data['TOTAL AMOUNT OF YARN (MS)'] = new_data['TOTAL AMOUNT OF YARN (YDS)'] * ms_per_yd
         
         # updating an entry
         if ind > -1:
             for ne in new_data:
-                self.pattern_table[ind, ne] = new_data[ne]
+                self.pattern_table.loc[ind, ne] = new_data[ne]
         # adding a new entry
         else:
             new_data['DATE ADDED'] = dt.date.today()
             new_data['DATE ADDED'] = pd.to_datetime(new_data['DATE ADDED'])
             self.pattern_table.loc[len(self.pattern_table)] = new_data
 
+    # TO DO: implement pattern name checking in the database and force them to be logged
+    # TO DO: add machine washable boolean and grab the info from the yarn database (which requires the yarn to be logged as well) -- can set it so that it is machine washable only if all the yarn listed in it is machine washable
     def add_to_project(self, new_entry, run_test=False):
         # see if already exists, if so prep update steps
         new_data,ind = self.add_helper(self.project_table, new_entry, testing=run_test, pattern_search=False)
@@ -173,12 +178,12 @@ class PatternProjTables:
         # updating an entry
         if ind > -1:
             for ne in new_data:
-                self.project_table[ind, ne] = new_data[ne]
+                self.project_table.loc[ind, ne] = new_data[ne]
         # adding a new entry
         else:
             new_data['DATE LOGGED'] = dt.date.today()
             new_data['DATE LOGGED'] = pd.to_datetime(new_data['DATE LOGGED'])
-            self.project_table.log[len(self.project_table)] = new_data
+            self.project_table.loc[len(self.project_table)] = new_data
 
     # remove by index or by pattern/project name
     def remove_table_entry(self, table, remove_i=None, remove_name=None, pattern_search=True):

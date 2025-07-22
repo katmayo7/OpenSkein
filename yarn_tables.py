@@ -74,8 +74,8 @@ class YarnTables:
     
     # allows for extending a text field with more information (ex: dye lots, notes), but ignroing duplicates
     def format_long_form(self, one, two):
-        set1 = set(one.split(','))
-        set2 = set(two.split(','))
+        set1 = set(one.split(', '))
+        set2 = set(two.split(', '))
 
         union = list(set1.union(set2))
         union = [s + ',' for s in union]

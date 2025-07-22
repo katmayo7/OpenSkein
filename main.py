@@ -14,10 +14,10 @@ def view(tables, table_name, use_metric=False, filter_table={}):
     all_cols.remove('BRAND NAME')
     all_cols.remove('COLOR')
 
-    print('You may view a subset of the columns by inputting a comma separated list (no spaces after comma) of column names, or typing "all" to see the data for all columns.')
+    print('You may view a subset of the columns by inputting a comma separated list of column names, or typing "all" to see the data for all columns.')
     print('Columns available for viewing: ', all_cols)
     to_view = input('Which columns of data would you like to view: ').upper()
-    to_view = to_view.split(',')
+    to_view = to_view.split(', ')
     validated_to_view = []
 
     if to_view[0] == 'ALL':

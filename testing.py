@@ -1,4 +1,5 @@
 import yarn_tables
+import pattern_and_proj_tables
 
 def setup():
     yt = yarn_tables.YarnTables()
@@ -92,10 +93,128 @@ def test_stash_table(yts):
     print('----- Testing Stash Table Completed -----')
     print()
 
+def setup_patt_and_proj():
+    pt = pattern_and_proj_tables.PatternProjTables()
+    pt.load_data()
+
+    return pt
+    
+def test_pattern_table(pts):
+        
+    # expected: add to pattern table, filling in the meters appropriately
+    print('*** Add to pattern table ***')
+    new_item = {'PATTERN NAME': 'winter hat', 'SUGGESTED YARN WEIGHT': 4, 'SUGGESTED HOOK SIZE': 5.0, 'TOTAL AMOUNT OF YARN (YDS)': 100.0, 'TOTAL AMOUNT OF YARN (MS)': None, 'CATEGORY': 'wearables', 'NOTES': 'comfortable and looks good', 'SOURCE': 'https://test.com'}
+    pts.add_to_pattern(new_item, True)
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    # expected: add to pattern table, filling yards appropriately
+    print('*** Add to pattern table ***')
+    new_item = {'PATTERN NAME': 'summer top', 'SUGGESTED YARN WEIGHT': 2, 'SUGGESTED HOOK SIZE': 3.5, 'TOTAL AMOUNT OF YARN (YDS)': None, 'TOTAL AMOUNT OF YARN (MS)': 400.0, 'CATEGORY': 'top', 'NOTES': '', 'SOURCE': 'Fun Summer Tops Book'}
+    pts.add_to_pattern(new_item, True)
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    # expected: update pattern entry information
+    print('*** Update summer top pattern hook size and category***')
+    new_item = {'PATTERN NAME': 'summer top', 'SUGGESTED YARN WEIGHT': 2, 'SUGGESTED HOOK SIZE': 4.0, 'TOTAL AMOUNT OF YARN (YDS)': None, 'TOTAL AMOUNT OF YARN (MS)': 400.0, 'CATEGORY': 'wearables', 'NOTES': '', 'SOURCE': 'Fun Summer Tops Book'}
+    pts.add_to_pattern(new_item, True)
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    # expected: add duplicate pattern, which should not change the table
+    print('*** Add duplicate of the winter hat pattern ***')
+    new_item = {'PATTERN NAME': 'winter hat', 'SUGGESTED YARN WEIGHT': 4, 'SUGGESTED HOOK SIZE': 5, 'TOTAL AMOUNT OF YARN (YDS)': 100, 'TOTAL AMOUNT OF YARN (MS)': None, 'CATEGORY': 'wearables', 'NOTES': 'comfortable and looks good', 'SOURCE': 'https://test.com'}
+    pts.add_to_pattern(new_item, True)
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    # expected: remove winter hat from pattern table
+    print('*** Remove summer top pattern ***')
+    pts.remove_table_entry(pts.pattern_table, remove_name='summer top')
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    # expected: add new pattern
+    print('*** Add new placemat pattern ***')
+    new_item = {'PATTERN NAME': 'easy placemats', 'SUGGESTED YARN WEIGHT': 4, 'SUGGESTED HOOK SIZE': 5, 'TOTAL AMOUNT OF YARN (YDS)': 1000, 'TOTAL AMOUNT OF YARN (MS)': None, 'CATEGORY': 'home decor', 'NOTES': '', 'SOURCE': 'https://test.com'}
+    pts.add_to_pattern(new_item, True)
+
+    pts.print_table(pts.pattern_table)
+    print()
+
+    print('----- Testing Pattern Table Completed -----')
+    print()
+
+def test_project_table(pts):
+    test_pattern_table(pts)
+    
+    # expected: add a new project calculate the total amount of yarn ms
+    print('*** Add to project table ***')
+    new_item = {'PROJECT NAME': 'cozy winter hat', 'PATTERN NAME': 'winter hat', 'YARN(S) USED (BRAND+COLOR)': 'lion brand wool ease blue; lion brand wood ease yellow', 'YARN WEIGHT': 3, 'AMOUNT OF YARN (PER YARN)': '100; 100', 'TOTAL AMOUNT OF YARN (YDS)': 200.0, 'TOTAL AMOUNT OF YARN (MS)': None, 'DYE LOTS (PER YARN)': 'abc; afj', 'HOOK SIZE USED': 5.0, 'MACHINE WASHABLE': True, 'NOTES': 'a little big'}
+    pts.add_to_project(new_item, True)
+
+    pts.print_table(pts.project_table)
+    print()
+
+    # expected: add a new project calculate the total amount of yarn yds
+    print('*** Add new project ***')
+    new_item = {'PROJECT NAME': 'mom placemat gift', 'PATTERN NAME': 'easy placemats', 'YARN(S) USED (BRAND+COLOR)': 'lily sugar and cream blue; lily sugar and cream yellow', 'YARN WEIGHT': 4, 'AMOUNT OF YARN (PER YARN)': '500; 500', 'TOTAL AMOUNT OF YARN (YDS)': None, 'TOTAL AMOUNT OF YARN (MS)': 1000.0, 'DYE LOTS (PER YARN)': '', 'HOOK SIZE USED': 4.0, 'MACHINE WASHABLE': False, 'NOTES': ''}
+    pts.add_to_project(new_item, True)
+
+    pts.print_table(pts.project_table)
+    print()
+
+    # expected: add a duplicate doesn't change things
+    print('*** Add duplicate ***')
+    new_item = {'PROJECT NAME': 'cozy winter hat', 'PATTERN NAME': 'winter hat', 'YARN(S) USED (BRAND+COLOR)': 'lion brand wool ease blue; lion brand wood ease yellow', 'YARN WEIGHT': 3, 'AMOUNT OF YARN (PER YARN)': '100; 100', 'TOTAL AMOUNT OF YARN (YDS)': 200.0, 'TOTAL AMOUNT OF YARN (MS)': None, 'DYE LOTS (PER YARN)': 'abc; afj', 'HOOK SIZE USED': 5.0, 'MACHINE WASHABLE': True, 'NOTES': 'a little big'}
+    pts.add_to_project(new_item, True)
+
+    pts.print_table(pts.project_table)
+    print()
+
+    # expected: update the hook size and yarn weight of an existing entry
+    print('*** Update total amount of yarn for winter hat ***')
+    new_item = {'PROJECT NAME': 'cozy winter hat', 'PATTERN NAME': 'winter hat', 'YARN(S) USED (BRAND+COLOR)': 'lion brand wool ease blue; lion brand wood ease yellow', 'YARN WEIGHT': 3, 'AMOUNT OF YARN (PER YARN)': '100; 100', 'TOTAL AMOUNT OF YARN (YDS)': 225.0, 'TOTAL AMOUNT OF YARN (MS)': None, 'DYE LOTS (PER YARN)': 'abc; afj', 'HOOK SIZE USED': 5.0, 'MACHINE WASHABLE': True, 'NOTES': 'a little big'}
+    pts.add_to_project(new_item, True)
+
+    pts.print_table(pts.project_table)
+    print()
+
+    # expected: remove 
+    print('*** Remove winter hat ***')
+    pts.remove_table_entry(pts.project_table, remove_name='cozy winter hat', pattern_search=False)
+
+    pts.print_table(pts.project_table)
+    print()
+
+    # expected: should throw error becasue this pattern doesn't exist
+    print('*** Add new project with pattern not yet logged, should throw error ***')
+    new_item = {'PROJECT NAME': 'blue bunny', 'PATTERN NAME': 'easy bunny plushie', 'YARNS(S) USED (BRAND+COLOR)': 'lion brand polyester gray', 'YARN WEIGHT': 5, 'AMOUNT OF YARN (PER YARN)': '500', 'TOTAL AMOUNT OF YARN (YDS)': 500, 'TOTAL AMOUNT OF YARN (MS)': None, 'DYE LOTS (PER YARN)': '123', 'HOOK SIZE USED': 6, 'MACHINE WASHABLE': False, 'NOTES': 'cute project'}
+    pts.add_to_project(new_item, True)
+    
+    pts.print_table(pts.project_table)
+    print()
+
+    print('----- Testing Pattern Table Completed -----')
+    print()
+
 if __name__ == '__main__':
     
-    yt = setup()
+    #yt = setup()
 
     #test_yarn_table(yt)
 
-    test_stash_table(yt)
+    #test_stash_table(yt)
+
+    pt = setup_patt_and_proj()
+
+   # test_pattern_table(pt)
+
+    test_project_table(pt)
+

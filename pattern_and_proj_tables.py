@@ -24,9 +24,9 @@ class PatternProjTables:
             self.pattern_table['DATE ADDED'] = pd.to_datetime(self.pattern_table['DATE ADDED'])
 
             self.project_table = pd.DataFrame(columns=['DATE LOGGED', 'PROJECT NAME', 'PATTERN NAME', 'YARN(S) USED (BRAND+COLOR)', 'YARN WEIGHT', 'AMOUNT OF YARN (PER YARN)', 'TOTAL AMOUNT OF YARN (YDS)', 'TOTAL AMOUNT OF YARN (MS)', 'DYE LOTS (PER YARN)',
-                                                       'HOOK SIZE USED', 'NOTES'])
+                                                       'HOOK SIZE USED', 'MACHINE WASHABLE', 'NOTES'])
             project_data_types = {'PROJECT NAME': 'str', 'PATTERN NAME': 'str', 'YARN(S) USED (BRAND+COLOR)': 'str', 'YARN WEIGHT': 'int', 'AMOUNT OF YARN (PER YARN)': 'str', 'TOTAL AMOUNT OF YARN (YDS)': 'float', 'TOTAL AMOUNT OF YARN (MS)': 'float',
-                                  'DYE LOTS (PER YARN)': 'str', 'HOOK SIZE USED': 'float', 'NOTES': 'str'}
+                                  'DYE LOTS (PER YARN)': 'str', 'HOOK SIZE USED': 'float', 'MACHINE WASHABLE': 'bool', 'NOTES': 'str'}
             self.project_table = self.project_table.astype(project_data_types)
             self.project_table['DATE LOGGED'] = pd.to_datetime(self.project_table['DATE LOGGED'])
 
@@ -75,8 +75,8 @@ class PatternProjTables:
 
     # combine new and old notes
     def format_long_form(self, old_info, new_info):
-        old_info = set(old_info.split(','))
-        new_info = set(new_info.split(','))
+        old_info = set(old_info.split(', '))
+        new_info = set(new_info.split(', '))
 
         union = list(old_info.union(new_info))
         union = [s + ',' for s in union]
@@ -157,9 +157,14 @@ class PatternProjTables:
             new_data['DATE ADDED'] = pd.to_datetime(new_data['DATE ADDED'])
             self.pattern_table.loc[len(self.pattern_table)] = new_data
 
-    # TO DO: implement pattern name checking in the database and force them to be logged
-    # TO DO: add machine washable boolean and grab the info from the yarn database (which requires the yarn to be logged as well) -- can set it so that it is machine washable only if all the yarn listed in it is machine washable
     def add_to_project(self, new_entry, run_test=False):
+        # required that the pattern is logged in the pattern database first
+        pattern_i = self.check_exists(self.pattern_table, new_entry['PATTERN NAME'], True)
+
+        if pattern_i == -1:
+            print('** Error, must add pattern to pattern database before logging project!')
+            return
+
         # see if already exists, if so prep update steps
         new_data,ind = self.add_helper(self.project_table, new_entry, testing=run_test, pattern_search=False)
 

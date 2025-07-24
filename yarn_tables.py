@@ -74,11 +74,18 @@ class YarnTables:
     
     # allows for extending a text field with more information (ex: dye lots, notes), but ignroing duplicates
     def format_long_form(self, one, two):
-        set1 = set(one.split(', '))
-        set2 = set(two.split(', '))
+        if ', ' in one:
+            set1 = set(one.split(', '))
+        else:
+            set1 = set(one.split(','))
+        
+        if ', ' in two:
+            set2 = set(two.split(', '))
+        else:
+            set2 = set(two.split(','))
 
         union = list(set1.union(set2))
-        union = [s + ',' for s in union]
+        union = [s + ', ' for s in union]
 
         return ''.join(union)
     
@@ -132,8 +139,6 @@ class YarnTables:
         new_data,i = self.add_helper(self.yarns_table, new_data, testing)
         if new_data == None:
             return
-
-        print(new_data)
         
         # calculate meters from yards or vice versa if only one is provided
         yds_per_m = 1.09361

@@ -75,11 +75,18 @@ class PatternProjTables:
 
     # combine new and old notes
     def format_long_form(self, old_info, new_info):
-        old_info = set(old_info.split(', '))
-        new_info = set(new_info.split(', '))
+        if ', ' in old_info:
+            old_info = set(old_info.split(', '))
+        else:
+            old_info = set(old_info.split(','))
+        
+        if ', ' in new_info:
+            new_info = set(new_info.split(', '))
+        else:
+            new_info = set(new_info.split(','))
 
         union = list(old_info.union(new_info))
-        union = [s + ',' for s in union]
+        union = [s + ', ' for s in union]
 
         return ''.join(union)
 

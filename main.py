@@ -177,15 +177,30 @@ def add_stash(tables, use_metric=False):
         print('----Dye Lots: ', to_add['DYE LOTS'])
 
         correct = input('Is this information correct (yes/no): ').lower()
+
+    # if we're removing from stash
+    if weight == 0 or length == 0 or num_skeins == 0:
+        to_add['TOTAL WEIGHT (G)'] = 0
+        to_add['TOTAL LENGTH (YDS)'] = 0
+        to_add['TOTAL LENGTH (MS)'] = 0
+        to_add['# SKEINS'] = 0
     
     if weight != '':
         to_add['TOTAL WEIGHT (G)'] = weight
+    else:
+        to_add['TOTAL WEIGHT (G)'] = None
     if length != '' and not use_metric:
         to_add['TOTAL LENGTH (YDS)'] = length
+    else:
+        to_add['TOTAL LENGTH (YDS)'] = None
     if length != '' and use_metric:
         to_add['TOTAL LENGTH (MS)'] = length
+    else:
+        to_add['TOTAL LENGTH (MS)'] = None
     if num_skeins != '':
         to_add['# SKEINS'] = num_skeins
+    else:
+        to_add['# SKEINS'] = None
     
     tables.add_to_stash(to_add)
 

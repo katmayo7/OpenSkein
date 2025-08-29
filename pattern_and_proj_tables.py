@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import datetime as dt
+from tabulate import tabulate
 
 class PatternProjTables:
 
@@ -47,7 +48,8 @@ class PatternProjTables:
         else:
             print_cols = [c for c in table.columns if '(MS)' not in c]
         
-        print(table[print_cols])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(table[print_cols])
         print('***********************************************************************************************************************************************************************************************************************')
 
     def get_project(self):
@@ -101,7 +103,8 @@ class PatternProjTables:
             return new_entry,-1
         
         print('It looks like you are trying to add a duplicate. This pattern is already logged as:')
-        print(table.loc[tmp])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(table.loc[tmp])
         print()
 
         text_fields = list(table.select_dtypes(include='object').columns)

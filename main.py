@@ -1,6 +1,7 @@
 import yarn_tables
 import pattern_and_proj_tables as ppt
 import pandas as pd
+from tabulate import tabulate
 
 # allows for viewing both metric and imperial measurements despite the general table settings (useful depending on pattern listing, etc.)
 def view(tables, table_name, use_metric=False, filter_table={}):
@@ -62,13 +63,17 @@ def view(tables, table_name, use_metric=False, filter_table={}):
         validated_to_view.insert(0, 'PATTERN NAME')
     
     if table_name == 'yarn':
-        print(tables.yarns_table[validated_to_view])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(tables.yarns_table[validated_to_view])
     elif table_name == 'stash':
-        print(tables.stash_table[validated_to_view])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(tables.stash_table[validated_to_view])
     elif table_name == 'project':
-        print(tables.project_table[validated_to_view])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(tables.project_table[validated_to_view])
     elif table_name == 'pattern':
-        print(tables.pattern_table[validated_to_view])
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(tables.pattern_table[validated_to_view])
     elif len(filter_table) > 0:
         return filter_table[validated_to_view]
     
@@ -514,7 +519,8 @@ def filter(tables, table_name, metric=False):
                 inter_yes = input('See intermediate results (yes/no): ').lower()
 
             if inter_yes == 'yes':
-                print(fil_table)
+                with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+                    print(fil_table)
     
     # allow viewing only a subset of available columns from the final table
     subset_view = input('Do you wish to select for viewing a subset of the columns in the final filtered table? (yes/no) ')
@@ -524,7 +530,8 @@ def filter(tables, table_name, metric=False):
     print()
     print('FILTERED TABLE:')
     print('************************************************************************************************************')
-    print(fil_table)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(fil_table)
     print('************************************************************************************************************')
 
 

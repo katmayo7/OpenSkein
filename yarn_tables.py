@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import datetime as dt
+from tabulate import tabulate
 
 class YarnTables:
 
@@ -49,7 +50,8 @@ class YarnTables:
         else:
             print_cols = [c for c in table.columns if '(MS)' not in c]
         
-        print(table[print_cols])  
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+            print(table[print_cols])
         print('**************************************************************************************************************************************************')
     
     def get_yarn(self):
@@ -100,7 +102,8 @@ class YarnTables:
 
         if tmp_i > -1:
             print('!! It looks like you are trying to add a duplicate. This yarn is already logged as:')
-            print(table.loc[tmp_i])
+            with pd.option_context('display.max_rows', None, 'display.max_columns', None,):
+                print(table.loc[tmp_i])
             print()
             
             info_diff = {}
